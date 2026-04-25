@@ -1,0 +1,36 @@
+% ============================================================
+% Section 3: Problem Statement & Objectives
+% ============================================================
+\section{Problem Statement}
+
+\subsection{Core Problem}
+Current women's safety applications fail to provide timely, reliable protection during real-world emergencies due to three interrelated systemic shortcomings:
+
+\subsubsection{Manual Dependency in High-Stress Scenarios}
+Psychological studies confirm that acute threat triggers fight-flight-freeze responses, impairing fine motor skills and decision-making capacity \cite{nij2022}. Requiring a victim to unlock a phone, navigate an app, and press a button introduces critical delays---or complete failure---when seconds matter.
+
+\subsubsection{Absence of Predictive Capability}
+Existing systems operate on a post-incident model: alerts are triggered only after harm has occurred or is actively unfolding. There is no mechanism to identify early behavioral or environmental indicators (e.g., sudden route deviation, prolonged stationary status in isolated areas, unusual velocity patterns) that precede escalation.
+
+\subsubsection{Contextual Blindness and Uniform Risk Assumptions}
+Most applications apply static rules (e.g., ``send alert if SOS pressed'') without adapting to dynamic risk factors such as time-of-day, location type, movement anomalies, or network status. This one-size-fits-all logic generates either missed threats (false negatives) or excessive false alarms (false positives), eroding system credibility.
+
+\subsection{Formal Problem Definition}
+\textit{How can a mobile safety system autonomously detect escalating threat conditions using contextual sensor data, compute a reliable risk score in real-time, and trigger protective alerts without requiring conscious user interaction---while preserving privacy, optimizing resource usage, and maintaining scalability?}
+
+\section{Objectives}
+
+\subsection{Primary Objectives}
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Design a Proactive Safety Framework}: Develop a mobile system that continuously monitors contextual signals (location, motion, time, environment) to identify potential threats before manual intervention is required.
+  \item \textbf{Implement a Hybrid Danger Score Engine}: Create a two-phase risk assessment module combining rule-based filtering (Phase~1) with Google Gemini AI contextual reasoning (Phase~2) to output a normalized 0--100 score.
+  \item \textbf{Automate Emergency Alerting}: Establish a threshold-driven workflow (Score~$\geq$~60) that autonomously triggers multi-channel notifications to pre-verified trusted contacts, including live location and incident metadata.
+  \item \textbf{Ensure Privacy-Preserving Architecture}: Enforce end-to-end data protection via Firebase Security Rules, user-controlled data sharing policies, and minimal data collection principles.
+\end{enumerate}
+
+\subsection{Secondary (Engineering) Objectives}
+\begin{enumerate}[leftmargin=*,start=5]
+  \item \textbf{Optimize for Real-World Deployment}: Implement adaptive sensor sampling limiting battery consumption to $\leq$15\% over 8 hours; support offline persistence with queued alert retry mechanisms.
+  \item \textbf{Enable Scalable Cloud Automation}: Leverage Firebase Cloud Functions for serverless processing of danger scores, AI API calls, and notification dispatch.
+  \item \textbf{Facilitate Extensibility}: Architect modular components to support future integrations with wearables, municipal emergency APIs, and community safety layers (e.g., anonymized Fear Map).
+\end{enumerate}

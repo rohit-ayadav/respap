@@ -1,0 +1,64 @@
+% ============================================================
+% Section 6: Methodology
+% ============================================================
+\section{Methodology}
+
+\subsection{End-to-End Workflow}
+SafeHer operates on a continuous, event-driven loop following five sequential phases: (1)~Data Acquisition, (2)~Preprocessing, (3)~Risk Scoring, (4)~Decision \& Alerting, (5)~Feedback \& Logging.
+
+\subsection{Phase 1: Contextual Data Collection}
+The Flutter client collects sensor data at adaptive intervals based on motion state, as summarized in Table~\ref{tab:sensors}.
+
+\begin{table}[htbp]
+\caption{Sensor Data Collection Parameters}
+\label{tab:sensors}
+\centering
+\scriptsize
+\begin{tabularx}{\columnwidth}{|p{1.2cm}|p{1.8cm}|X|}
+\hline
+\textbf{Sensor} & \textbf{Sampling Rate} & \textbf{Purpose} \\
+\hline
+GPS & 30s (static) $\to$ 5s (moving) & Location, speed, route deviation \\
+\hline
+Accelerometer & 10Hz (burst on anomaly) & Fall detection, sudden stops \\
+\hline
+Gyroscope & 5Hz & Orientation changes, vehicle detection \\
+\hline
+System Clock & Event-triggered & Time-of-day, duration analysis \\
+\hline
+Network Info & On change & Connectivity risk factor \\
+\hline
+\end{tabularx}
+\end{table}
+
+Adaptive sampling reduces battery drain by 40--60\% compared to fixed-rate polling \cite{apple2024}.
+
+\subsection{Phase 2: Feature Engineering \& Rule-Based Pre-Filtering}
+Raw sensor data is transformed into contextual features including \texttt{time\_risk} (0--10 scale), \texttt{location\_type} (commercial/residential/isolated), \texttt{isolation\_index} (POI density within 200m), \texttt{velocity\_variance}, \texttt{route\_deviation}, \texttt{motion\_anomaly}, and \texttt{network\_risk}.
+
+The rule-based risk aggregation applies deterministic thresholds:
+\begin{lstlisting}[language=Python,caption={Rule-Based Risk Aggregation}]
+Base_Risk = 0
+IF time_risk >= 7:       Base_Risk += 15
+IF location == "isolated": Base_Risk += 20
+IF velocity_var > thresh AND motion_anomaly:
+                         Base_Risk += 25
+IF route_dev > 200m AND isolation > 0.8:
+                         Base_Risk += 15
+IF network_risk == 1:    Base_Risk += 10
+Base_Risk = min(Base_Risk, 50)  # Cap at 50
+\end{lstlisting}
+
+\subsection{Phase 3: Hybrid Danger Score Computation}
+The Verified Safety Matrix fuses rule-based and AI scores using weighted fusion:
+\begin{equation}
+S_{final} = \alpha \cdot S_{rule} + \beta \cdot S_{AI}
+\label{eq:fusion}
+\end{equation}
+where $\alpha = 0.5$, $\beta = 0.5$ (calibrated via validation set), $S_{rule} \in [0, 50]$, $S_{AI} \in [0, 50]$, yielding $S_{final} \in [0, 100]$. Default alert threshold is 60, tunable per region/user via Firebase Remote Config.
+
+\subsection{Phase 4: Autonomous Decision \& Alerting}
+When $S_{final} \geq$ threshold and monitoring is not paused, the system constructs an alert payload containing user ID, timestamp, last known location, risk score, context summary, and a unique alert ID. It dispatches via Cloud Function, initiates a 15-minute live location stream, and logs to Firestore for audit.
+
+\subsection{Phase 5: Feedback Loop \& Continuous Improvement}
+Post-alert, trusted contacts can mark ``False Alarm'' or ``Confirmed Threat'' via the app UI. Anonymized feedback combined with context vectors is aggregated weekly to refine rule weights and AI prompt examples. A/B testing of thresholds and rule parameters is conducted across user cohorts to optimize precision/recall trade-offs.

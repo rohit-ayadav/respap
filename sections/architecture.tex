@@ -1,0 +1,34 @@
+% ============================================================
+% Section 5: System Architecture
+% ============================================================
+\section{System Architecture}
+
+\subsection{Layered Architectural Overview}
+SafeHer adopts a modular, three-tier architecture designed for scalability, maintainability, and real-time responsiveness. The system is partitioned into three logical layers: \textbf{Presentation (Frontend)}, \textbf{Application \& Data (Backend)}, and \textbf{Intelligence (AI)}. This separation enables independent evolution of components while ensuring secure, low-latency communication.
+
+\textit{Presentation Layer}: Flutter mobile application with sensor integration (GPS, IMU), local state management via Riverpod, and offline persistence using Hive/SQLite.
+
+\textit{Application \& Data Layer}: Firebase Authentication, Cloud Firestore (NoSQL), Cloud Functions (serverless), Firebase Cloud Messaging (FCM), and Crashlytics for monitoring.
+
+\textit{Intelligence Layer}: Google Gemini Pro API with structured prompt engineering, risk score normalization, and fallback rule engine.
+
+Data flows from mobile sensors through Firebase backend services to Google Gemini for AI inference, with autonomous alerting routed back via FCM to trusted contacts.
+
+\subsection{Component Interactions}
+
+\subsubsection{Frontend--Backend Communication}
+Authentication uses phone OTP via Firebase Auth with JWT tokens attached to all subsequent requests. Data synchronization employs bi-directional Firestore listeners for real-time location/alert updates with an offline-first design and local queue for pending writes. Cloud Functions are invoked via HTTPS calls for danger score computation and alert dispatch.
+
+\subsubsection{Backend--AI Layer Communication}
+Gemini API calls are routed through authenticated Cloud Functions using a \textit{Secure Proxy Pattern} to prevent client-side key exposure. Context vectors are batched where privacy-compliant to optimize API quota. AI outputs are parsed, validated against schema, and normalized before score integration.
+
+\subsubsection{Alert Distribution Pipeline}
+When the Danger Score exceeds the threshold: (1)~Cloud Function validates user preferences; (2)~alert payload is constructed with user ID, location, risk score, and timestamp; (3)~parallel dispatch via FCM and SMS fallback (Twilio); (4)~log to Firestore alerts collection; (5)~initiate live location stream with 15-minute TTL.
+
+\subsection{Security \& Privacy Architecture}
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Data Minimization}: Only essential derived features (not raw coordinates) are transmitted for AI processing.
+  \item \textbf{Encryption}: Data in transit (TLS 1.3); data at rest (Firestore server-side encryption); optional end-to-end encryption for alert payloads.
+  \item \textbf{Access Control}: Firestore Security Rules enforce user-level document ownership; Cloud Functions verify caller identity via Firebase Admin SDK.
+  \item \textbf{Auditability}: All critical operations are logged with immutable timestamps for forensic review.
+\end{itemize}

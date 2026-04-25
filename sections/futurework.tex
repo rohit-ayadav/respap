@@ -1,0 +1,21 @@
+% ============================================================
+% Section 11: Future Work
+% ============================================================
+\section{Future Work}
+
+To transition SafeHer from a validated prototype to widely deployable safety infrastructure, the following directions are proposed:
+
+\subsection{Wearable \& IoT Integration}
+Bluetooth Low Energy (BLE) communication with Wear OS/watchOS for motion tracking offloading and discreet haptic warnings. eSIM-enabled wearables for emergency alerts when the paired phone is inaccessible. Multi-device fusion combining phone GPS, watch heart rate variability (HRV), and earbud microphone levels for physiological stress correlation.
+
+\subsection{On-Device AI \& Edge Inference}
+TensorFlow Lite deployment of quantized lightweight models on mobile NPUs to eliminate cloud dependency, reduce alert latency to $<$500ms, and enable offline operation. Federated learning for aggregating model updates across user cohorts without transmitting raw sensor data \cite{patel2024}.
+
+\subsection{Voice-Triggered SOS \& Acoustic Analysis}
+On-device keyword spotting to detect distress phrases (e.g., ``Help me'') without continuous audio streaming. Ambient sound classification for detecting distress signatures (screams, aggressive tones) using edge-based audio ML, triggered only when combined with motion/location anomalies.
+
+\subsection{Institutional \& Government API Integration}
+Partnership with municipal 112/911 systems for forwarding verified, high-confidence alerts. Anonymized fear map data for urban planning (street lighting, CCTV placement, patrol routing). Immutable alert logging with cryptographic signing for forensic use, complying with GDPR and DPDP Act \cite{firebase_functions2024}.
+
+\subsection{Personalized Behavioral Learning}
+User baseline modeling tracking individual walking patterns and temporal habits for dynamic deviation threshold calibration. Adaptive scoring adjusting rule weights based on historical feedback. Context-aware thresholds auto-lowering in historically high-risk zones.

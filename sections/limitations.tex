@@ -1,0 +1,21 @@
+% ============================================================
+% Section 10: Limitations
+% ============================================================
+\section{Limitations}
+
+While SafeHer demonstrates significant advancements in proactive safety engineering, several technical and operational limitations remain:
+
+\subsection{Battery \& Resource Constraints}
+Continuous background sensing inherently competes with device power management. Although adaptive sampling reduces consumption to $\sim$9.3\% over 8 hours, prolonged high-risk monitoring (1-second GPS intervals) can increase drain to 20--25\% on older devices. Android/iOS aggressive background process killing may also interrupt data streams unless foreground service permissions are granted \cite{nguyen2023}.
+
+\subsection{Network Dependency \& Cloud Latency}
+The hybrid scoring architecture relies on Firebase Cloud Functions and the Google Gemini API for contextual AI inference. In regions with unstable connectivity or high latency, AI scoring delays can extend alert triggering beyond the optimal window. While offline queuing and rule-based fallbacks mitigate complete failure, true zero-latency autonomous alerting requires on-device AI capabilities.
+
+\subsection{AI Prediction Uncertainty}
+Large language models like Gemini provide powerful contextual reasoning but remain probabilistic and opaque. The system currently lacks personalized behavioral baselines, deterministic scoring guarantees, and transparent user-facing explainability for justification strings.
+
+\subsection{Environmental \& Hardware Variability}
+GPS accuracy degrades in urban canyons, underground transit, and dense foliage. Accelerometer/gyroscope thresholds vary across device manufacturers. Reverse-geocoding APIs may incorrectly label dynamic spaces, skewing location semantic features \cite{google_geo2024}.
+
+\subsection{Privacy-Utility Trade-offs}
+Despite strict data minimization, user hesitation regarding continuous tracking remains an adoption barrier. Autonomous alerting without explicit confirmation may cause anxiety if false positives occur frequently.

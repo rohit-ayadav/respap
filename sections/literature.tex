@@ -1,0 +1,41 @@
+% ============================================================
+% Section 2: Literature Review
+% ============================================================
+\section{Literature Review}
+
+\subsection{Overview of Existing Safety Solutions}
+Digital interventions for women's safety have evolved significantly over the past decade, broadly falling into three categories as shown in Table~\ref{tab:existing_solutions}.
+
+\begin{table}[htbp]
+\caption{Categories of Existing Safety Solutions}
+\label{tab:existing_solutions}
+\centering
+\scriptsize
+\begin{tabularx}{\columnwidth}{|p{1.6cm}|p{2.2cm}|X|}
+\hline
+\textbf{Category} & \textbf{Examples} & \textbf{Core Mechanism} \\
+\hline
+Traditional SOS Apps & bSafe, Circle of 6, Nirbhaya App & Manual panic button, SMS/call to contacts \\
+\hline
+GPS Tracking \& Geofencing & Life360, FamiSafe, Google Trusted Contacts & Continuous location sharing + zone-based alerts \\
+\hline
+AI/ML-Enhanced Prototypes & SAFECITY, SHIELD, VAMA & Sensor fusion + behavioral modeling + predictive alerts \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{Critical Analysis of Limitations}
+
+\subsubsection{Traditional SOS Applications}
+While widely adopted, manual-trigger systems suffer from fundamental usability gaps in real emergencies: (a)~\textit{Interaction Dependency}---require conscious, deliberate user action, often impossible during physical restraint, panic-induced freezing, or device confiscation \cite{who2018}; (b)~\textit{Contextual Blindness}---treat all locations, times, and movement patterns identically, ignoring environmental risk factors \cite{dhillon2021}; (c)~\textit{Alert Fatigue}---high false-positive rates from accidental triggers reduce trust and response urgency among contacts \cite{uddin2022}.
+
+\subsubsection{GPS-Centric Tracking Systems}
+Location-sharing platforms improve situational awareness but introduce new constraints: \textit{Privacy Concerns}---continuous location broadcasting raises surveillance and data-misuse risks \cite{gupta2023}; \textit{Battery Drain}---high-frequency GPS polling significantly reduces device usability \cite{nguyen2023}; \textit{Reactive Logic}---geofence breaches are detected post-entry, not pre-escalation \cite{gemini2025}.
+
+\subsubsection{AI-Based Research Prototypes}
+Emerging academic work explores predictive safety using machine learning. SAFECITY aggregates anonymous harassment reports to generate community heatmaps but lacks real-time individual risk assessment \cite{chen2024}. SHIELD employs accelerometer-based fall detection but operates in isolation from contextual cues like time or location type \cite{gupta2023}. VAMA integrates voice-command SOS but depends on clear audio input, which may be unavailable in noisy or constrained scenarios \cite{park2023}.
+
+\subsection{Identified Research Gaps}
+Despite technological advances, no existing solution comprehensively addresses the following requirements simultaneously: (1)~Proactive threat detection before manual intervention; (2)~Contextual intelligence integrating temporal, spatial, and behavioral signals; (3)~Autonomous, user-independent alerting; (4)~Production-ready privacy with offline resilience; (5)~Scalable cloud-native architecture supporting real-time AI inference.
+
+SafeHer directly addresses these gaps through its Verified Safety Matrix---a hybrid engine fusing rule-based logic with large language model (LLM) contextual reasoning---deployed on a privacy-first, battery-optimized mobile architecture.

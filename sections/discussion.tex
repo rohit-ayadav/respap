@@ -1,0 +1,35 @@
+% ============================================================
+% Section 9: Discussion
+% ============================================================
+\section{Discussion}
+
+\subsection{Critical Analysis of Strengths}
+
+\subsubsection{Architectural Innovations}
+SafeHer's hybrid danger scoring represents a pragmatic balance between computational efficiency and contextual intelligence. By performing rule-based pre-filtering on-device, the system minimizes cloud dependency and latency for obvious risk patterns, while reserving AI inference for nuanced scenarios requiring semantic understanding. This edge-cloud partitioning aligns with emerging best practices in mobile AI deployment \cite{rao2024}.
+
+\subsubsection{Privacy-Preserving Design}
+The implementation of differential privacy for the Fear Map module and strict data minimization for AI inputs demonstrates that proactive safety need not compromise user privacy. By design, no raw trajectory data is retained long-term, and community analytics operate on aggregated, noise-injected statistics---a model that could inform regulatory frameworks for location-based services \cite{edpb2023}.
+
+\subsubsection{Production-Ready Resilience}
+Features like offline queuing, adaptive sensor sampling, and fallback scoring ensure functionality in real-world conditions (poor connectivity, battery constraints). This contrasts with many academic prototypes that assume idealized environments, highlighting SafeHer's engineering maturity.
+
+\subsection{Acknowledged Weaknesses \& Trade-offs}
+
+\subsubsection{Battery vs.\ Accuracy Tension}
+While adaptive sampling reduces drain to $\sim$9\% over 8 hours, continuous high-risk monitoring (1s GPS polling) still consumes $\sim$22\% battery. Future work could explore on-device ML models (TensorFlow Lite) to further reduce cloud dependency.
+
+\subsubsection{AI Contextual Limitations}
+Google Gemini's reasoning, while powerful, remains a black box. Justification strings provide limited explainability, and model updates could alter scoring behavior without notice. Mitigation strategies include maintaining validation suites, implementing user-configurable ``AI weight'' sliders, and exploring smaller fine-tuned open-source models for greater control.
+
+\subsubsection{False Positive Management}
+The 7\% false positive rate in low-risk scenarios, while within target, could erode trust if frequent. The system addresses this via a 30-second user-cancel window, post-alert feedback collection, and personalized threshold calibration.
+
+\subsection{Real-World Usability Considerations}
+Background location and notification permissions may deter initial setup; progressive permission requests with clear value explanation mitigate this. Risk perception varies across regions; region-specific default thresholds are configurable via Firebase Remote Config.
+
+\subsection{Ethical Deployment}
+All proactive features are opt-in; users retain final control via pause/cancel functions. Trusted contacts must explicitly accept alert responsibilities. Direct police API integration is intentionally excluded from v1 to avoid misuse.
+
+\subsection{Broader Ecosystem Positioning}
+SafeHer augments rather than replaces emergency services. Its modular architecture allows integration with municipal systems (anonymous fear map data for patrol routing), wearable ecosystems (smartwatch haptic alerts), and community platforms (verified safety scores in ride-sharing apps) \cite{chen2024}.
