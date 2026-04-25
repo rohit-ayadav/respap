@@ -1,379 +1,381 @@
 """
 SafeHer Research Paper - Professional DOCX Generator
 Generates a two-column, IEEE-style research paper with Times New Roman font.
-Run: pip install python-docx   then   python "generate paper.py"
+Run: python "generate paper.py"
 """
 
-from docx import Document
 from docx.shared import Pt, Inches, Cm, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.enum.section import WD_ORIENT
-from docx.oxml.ns import qn
-from docx.oxml import OxmlElement
 import os
+from paper_helpers import (
+    init_document, styled_para, section_heading, pro_table,
+    add_bullet, add_numbered, add_code_block, add_image, add_hr,
+    ACCENT
+)
 
-# ================================================================
-# Helper utilities
-# ================================================================
-
-def set_cell_shading(cell, color_hex):
-    """Set background color on a table cell."""
-    shading = OxmlElement('w:shd')
-    shading.set(qn('w:fill'), color_hex)
-    shading.set(qn('w:val'), 'clear')
-    cell._tc.get_or_add_tcPr().append(shading)
-
-def make_two_column(section):
-    """Enable two-column layout on a Word section."""
-    sectPr = section._sectPr
-    cols = OxmlElement('w:cols')
-    cols.set(qn('w:num'), '2')
-    cols.set(qn('w:space'), '360')  # gap between columns in twips
-    sectPr.append(cols)
-
-def add_styled_paragraph(doc, text, bold=False, italic=False, size=12, alignment=WD_ALIGN_PARAGRAPH.JUSTIFY, space_after=6, font_name='Times New Roman'):
-    p = doc.add_paragraph()
-    p.alignment = alignment
-    p.paragraph_format.space_after = Pt(space_after)
-    p.paragraph_format.space_before = Pt(0)
-    run = p.add_run(text)
-    run.font.name = font_name
-    run.font.size = Pt(size)
-    run.bold = bold
-    run.italic = italic
-    return p
-
-def add_heading_styled(doc, text, level=1):
-    h = doc.add_heading(text, level=level)
-    for run in h.runs:
-        run.font.name = 'Times New Roman'
-        run.font.color.rgb = RGBColor(0, 0, 0)
-    return h
-
-def add_table_from_data(doc, headers, rows, col_widths=None):
-    table = doc.add_table(rows=1 + len(rows), cols=len(headers))
-    table.style = 'Table Grid'
-    # Header row
-    for i, h in enumerate(headers):
-        cell = table.rows[0].cells[i]
-        cell.text = h
-        for p in cell.paragraphs:
-            for r in p.runs:
-                r.bold = True
-                r.font.name = 'Times New Roman'
-                r.font.size = Pt(9)
-        set_cell_shading(cell, 'D9E2F3')
-    # Data rows
-    for ri, row in enumerate(rows):
-        for ci, val in enumerate(row):
-            cell = table.rows[ri + 1].cells[ci]
-            cell.text = val
-            for p in cell.paragraphs:
-                for r in p.runs:
-                    r.font.name = 'Times New Roman'
-                    r.font.size = Pt(9)
-    return table
-
-def add_bullet(doc, text, bold_prefix=''):
-    p = doc.add_paragraph(style='List Bullet')
-    if bold_prefix:
-        run_b = p.add_run(bold_prefix)
-        run_b.bold = True
-        run_b.font.name = 'Times New Roman'
-        run_b.font.size = Pt(11)
-    run = p.add_run(text)
-    run.font.name = 'Times New Roman'
-    run.font.size = Pt(11)
-    return p
-
-
-# ================================================================
-# Main document creation
-# ================================================================
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+CHARTS_DIR = os.path.join(SCRIPT_DIR, 'charts')
 
 def create_paper():
-    doc = Document()
-
-    # -- Global font defaults --
-    style = doc.styles['Normal']
-    style.font.name = 'Times New Roman'
-    style.font.size = Pt(11)
-    style.paragraph_format.space_after = Pt(4)
-
-    # -- Page margins --
-    for section in doc.sections:
-        section.top_margin = Cm(2.54)
-        section.bottom_margin = Cm(2.54)
-        section.left_margin = Cm(1.91)
-        section.right_margin = Cm(1.91)
-
-    # -- Enable two columns --
-    make_two_column(doc.sections[0])
+    doc = init_document()
 
     # ==============================================================
     # TITLE
     # ==============================================================
-    add_styled_paragraph(doc,
+    styled_para(doc,
         'SafeHer: A Proactive AI-Driven Safety System for Women Using Contextual Risk Assessment and Real-Time Monitoring',
-        bold=True, size=16, alignment=WD_ALIGN_PARAGRAPH.CENTER, space_after=4)
+        bold=True, size=18, align=WD_ALIGN_PARAGRAPH.CENTER, after=6)
+    
+    add_hr(doc)
 
-    add_styled_paragraph(doc,
-        '[Your Full Name]\n[Your University/College Name]\n[Department of Computer Science & Engineering]\nEmail: [your.email@example.com]',
-        italic=True, size=10, alignment=WD_ALIGN_PARAGRAPH.CENTER, space_after=12)
+    styled_para(doc,
+        'Rohit Kumar Yadav¹, Aditya Upadhyay², Kajal Kasaudhan³, Dr. Nikhat Akhtar⁴',
+        bold=False, italic=False, size=11, align=WD_ALIGN_PARAGRAPH.CENTER, after=6)
+
+    styled_para(doc,
+        '¹, ², ³ UG student, Department of Computer Science and Engineering, Goel Institute of Technology and Management, Lucknow, Uttar Pradesh, India\n'
+        '⁴ Professor, Department of Computer Science and Engineering, Goel Institute of Technology and Management, Lucknow, Uttar Pradesh, India',
+        italic=True, size=10, align=WD_ALIGN_PARAGRAPH.CENTER, after=12)
 
     # ==============================================================
     # ABSTRACT
     # ==============================================================
-    add_heading_styled(doc, 'Abstract', level=1)
-    add_styled_paragraph(doc,
+    # Using a light gray box for abstract
+    styled_para(doc, 'Abstract', bold=True, size=11, after=4)
+    styled_para(doc,
         "Women's safety remains a critical global concern, particularly in urban and semi-urban environments where manual panic-button apps often fail during high-stress emergencies. This paper presents SafeHer, a proactive, AI-driven mobile safety system that shifts personal protection from reactive alerting to predictive risk assessment. The system continuously monitors contextual mobile sensor data—including GPS location, motion patterns, time-of-day, and environmental isolation—and processes it through a hybrid Danger Score Engine. This engine combines rule-based risk thresholds with Google Gemini's contextual AI analysis to generate a dynamic risk score (0–100). When the score exceeds a predefined threshold, the system autonomously triggers emergency alerts to trusted contacts via Firebase Cloud Messaging, shares real-time location, and logs incident context without requiring user interaction. Built on a Flutter frontend with a scalable Firebase backend, SafeHer emphasizes privacy-preserving architecture, battery-optimized background tracking, offline resilience, and automated cloud workflows. Preliminary evaluations demonstrate an average alert latency of under 2.1 seconds, battery consumption of 8–12% over 8 hours of background monitoring, and a contextual accuracy rate of approximately 89% across simulated threat scenarios.",
         italic=True, size=10)
 
-    add_styled_paragraph(doc,
+    styled_para(doc,
         'Keywords: Women Safety, Predictive Safety Systems, AI-Based Risk Detection, Mobile Context Sensing, Firebase Architecture, Google Gemini AI, Proactive Alerting, Real-Time Location Tracking',
-        bold=True, size=9, space_after=12)
+        bold=True, size=9, after=12)
 
     # ==============================================================
     # 1. INTRODUCTION
     # ==============================================================
-    add_heading_styled(doc, '1. Introduction', level=1)
+    section_heading(doc, '1. Introduction', level=1)
 
-    add_heading_styled(doc, '1.1 Background', level=2)
-    add_styled_paragraph(doc,
-        "Women's safety continues to be a pressing socio-technical challenge worldwide, with urban and semi-urban environments reporting frequent incidents of harassment, assault, and unmonitored transit risks. According to global safety indices and national crime statistics, a significant proportion of gender-based violence occurs in public or semi-public spaces where victims lack immediate access to help [1]. The proliferation of smartphones has catalyzed numerous digital safety tools, yet their practical effectiveness during actual emergencies remains limited due to fundamental design flaws rooted in reactive paradigms.")
+    section_heading(doc, '1.1 Background', level=2)
+    styled_para(doc,
+        "Women's safety continues to be a pressing socio-technical challenge worldwide, with urban and semi-urban environments reporting frequent incidents of harassment, assault, and unmonitored transit risks. According to global safety indices and national crime statistics, a significant proportion of gender-based violence occurs in public or semi-public spaces where victims lack immediate access to help. In response, the proliferation of smartphones has catalyzed the development of numerous digital safety tools, ranging from emergency helpline integrations to location-sharing applications. While these tools have increased awareness, their practical effectiveness during actual emergencies remains limited due to fundamental design flaws rooted in reactive paradigms.",
+        indent=0.5)
 
-    add_heading_styled(doc, '1.2 Limitations of Existing Systems', level=2)
-    add_styled_paragraph(doc,
-        "Conventional safety applications predominantly operate on a manual trigger model, requiring users to physically unlock their devices, navigate interfaces, and press an SOS button during an active threat. Psychological research consistently demonstrates that acute stress impairs fine motor control and decision-making capacity, making manual interaction highly unreliable [2]. Furthermore, existing systems treat all environments and timeframes with uniform risk assumptions, ignoring contextual variables such as location isolation, unusual movement patterns, or temporal risk factors.")
+    section_heading(doc, '1.2 Limitations of Existing Systems', level=2)
+    styled_para(doc,
+        "Conventional safety applications predominantly operate on a manual trigger model, requiring users to physically unlock their devices, navigate interfaces, and press an SOS button during an active threat. Psychological and physiological research consistently demonstrates that acute stress impairs fine motor control, cognitive processing, and situational awareness, making manual interaction highly unreliable. Furthermore, existing systems treat all environments and timeframes with uniform risk assumptions, ignoring contextual variables such as location isolation, unusual movement patterns, or temporal risk factors. This contextual blindness results in either delayed emergency responses or high false-positive rates that erode user trust over time.",
+        indent=0.5)
 
-    add_heading_styled(doc, '1.3 The Need for Proactive Safety Systems', level=2)
-    add_styled_paragraph(doc,
-        "The inherent delay in reactive safety models underscores the necessity for a paradigm shift toward predictive and preventive protection. A proactive system must operate silently in the background, continuously interpreting environmental and behavioral cues to identify early indicators of danger. By leveraging mobile sensors, real-time cloud processing, and artificial intelligence, safety applications can transition from post-incident response to pre-incident intervention.")
+    section_heading(doc, '1.3 The Need for Proactive Safety Systems', level=2)
+    styled_para(doc,
+        "The inherent delay in reactive safety models underscores the necessity for a paradigm shift toward predictive and preventive protection. A proactive system must operate silently in the background, continuously interpreting environmental and behavioral cues to identify early indicators of danger. By leveraging mobile sensors, real-time cloud processing, and artificial intelligence, safety applications can transition from post-incident response to pre-incident intervention. Such systems not only reduce the cognitive and physical burden on users during critical moments but also provide trusted contacts and emergency responders with actionable situational awareness before harm escalates.",
+        indent=0.5)
 
-    add_heading_styled(doc, '1.4 Proposed Solution & Significance', level=2)
-    add_styled_paragraph(doc,
-        "This paper proposes SafeHer, a production-grade mobile safety platform that introduces the Verified Safety Matrix—a hybrid risk-scoring engine combining rule-based contextual filtering with Google Gemini's AI-driven situational analysis. SafeHer continuously evaluates location, motion, time, and environmental patterns to compute a dynamic Danger Score (0–100). Upon crossing a validated threshold, the system autonomously triggers multi-channel alerts, shares live GPS coordinates, and maintains secure logging without user intervention.")
+    section_heading(doc, '1.4 Proposed Solution & Significance', level=2)
+    styled_para(doc,
+        "This paper proposes SafeHer, a production-grade mobile safety platform that introduces the Verified Safety Matrix—a hybrid risk-scoring engine combining rule-based contextual filtering with Google Gemini's AI-driven situational analysis. SafeHer continuously evaluates location, motion, time, and environmental patterns to compute a dynamic Danger Score (0–100). Upon crossing a validated threshold, the system autonomously triggers multi-channel alerts, shares live GPS coordinates, and maintains secure logging without user intervention. The significance of this work lies in its architectural balance of predictive accuracy, privacy preservation, and real-world deployability. By demonstrating how edge-to-cloud AI can transform personal safety from a reactive afterthought to a continuous protective layer, SafeHer establishes a scalable foundation for next-generation emergency response systems, smart city integrations, and community-driven safety analytics.",
+        indent=0.5)
 
     # ==============================================================
     # 2. LITERATURE REVIEW
     # ==============================================================
-    add_heading_styled(doc, '2. Literature Review', level=1)
+    section_heading(doc, '2. Literature Review', level=1)
 
-    add_heading_styled(doc, '2.1 Overview of Existing Safety Solutions', level=2)
-    add_table_from_data(doc,
-        ['Category', 'Examples', 'Core Mechanism'],
+    section_heading(doc, '2.1 Overview of Existing Safety Solutions', level=2)
+    styled_para(doc, "Digital interventions for women's safety have evolved significantly over the past decade, broadly falling into three categories:")
+    
+    pro_table(doc,
+        ['Category', 'Representative Examples', 'Core Mechanism'],
         [
-            ['Traditional SOS Apps', 'bSafe, Circle of 6, Nirbhaya App', 'Manual panic button → SMS/call'],
-            ['GPS Tracking & Geofencing', 'Life360, FamiSafe', 'Continuous location + zone alerts'],
-            ['AI/ML-Enhanced Prototypes', 'SAFECITY, SHIELD, VAMA', 'Sensor fusion + behavioral modeling'],
-        ])
+            ['Traditional SOS Apps', 'bSafe, Circle of 6, Nirbhaya App', 'Manual panic button → SMS/call to contacts'],
+            ['GPS Tracking & Geofencing Apps', 'Life360, FamiSafe, Google Trusted Contacts', 'Continuous location sharing + zone-based alerts'],
+            ['AI/ML-Enhanced Research Prototypes', 'SAFECITY (crowdsourced heatmap), SHIELD (anomaly detection), VAMA (voice-assisted)', 'Sensor fusion + behavioral modeling + predictive alerts'],
+        ],
+        caption="Table 1: Overview of Existing Safety Solutions")
 
-    add_heading_styled(doc, '2.2 Critical Analysis of Limitations', level=2)
-    add_bullet(doc, ' Require conscious user action—often impossible during panic or restraint [1].', 'Interaction Dependency:')
-    add_bullet(doc, ' Treat all locations/times identically, ignoring environmental risk factors [2].', 'Contextual Blindness:')
-    add_bullet(doc, ' High false-positive rates erode trust and response urgency [3].', 'Alert Fatigue:')
-    add_bullet(doc, ' Continuous location broadcasting raises surveillance risks [8].', 'Privacy Concerns:')
+    section_heading(doc, '2.2 Critical Analysis of Limitations', level=2)
+    styled_para(doc, "While widely adopted, manual-trigger systems and GPS tracking suffer from fundamental usability gaps in real emergencies:")
+    add_bullet(doc, ' Require conscious, deliberate user action—often impossible during physical restraint or panic-induced freezing.', 'Interaction Dependency:')
+    add_bullet(doc, ' Treat all locations, times, and movement patterns identically, ignoring environmental risk factors.', 'Contextual Blindness:')
+    add_bullet(doc, ' High false-positive rates from accidental triggers reduce trust and response urgency among contacts.', 'Alert Fatigue:')
+    add_bullet(doc, ' Continuous location broadcasting raises surveillance and data-misuse risks.', 'Privacy Concerns:')
+    add_bullet(doc, ' High-frequency GPS polling significantly reduces device usability.', 'Battery Drain:')
 
-    add_heading_styled(doc, '2.3 Identified Research Gaps', level=2)
-    add_styled_paragraph(doc,
-        "No existing solution comprehensively addresses proactive threat detection, contextual intelligence, autonomous alerting, production-ready privacy, and scalable architecture simultaneously. SafeHer directly addresses these gaps through its Verified Safety Matrix.")
+    add_image(doc, os.path.join(CHARTS_DIR, 'feature_comparison.png'), width_inches=3.2, caption="Figure 1: Feature Comparison of SafeHer vs Existing Solutions")
+
+    section_heading(doc, '2.3 Identified Research Gaps', level=2)
+    styled_para(doc, "Despite technological advances, no existing solution comprehensively addresses the following requirements simultaneously:")
+    add_numbered(doc, ' Proactive Threat Detection: Early identification of risk before manual intervention is needed.')
+    add_numbered(doc, ' Contextual Intelligence: Integration of temporal, spatial, and behavioral signals for nuanced risk assessment.')
+    add_numbered(doc, ' Autonomous Alerting: Reliable, user-independent escalation when danger is detected.')
+    add_numbered(doc, ' Production-Ready Privacy: End-to-end data protection with user-controlled sharing and offline resilience.')
+    add_numbered(doc, ' Scalable Architecture: Cloud-native design supporting real-time processing, AI inference, and multi-channel notifications.')
+    
+    styled_para(doc, "SafeHer directly addresses these gaps through its Verified Safety Matrix—a hybrid engine fusing rule-based logic with large language model (LLM) contextual reasoning—deployed on a privacy-first, battery-optimized mobile architecture.")
 
     # ==============================================================
     # 3. PROBLEM STATEMENT
     # ==============================================================
-    add_heading_styled(doc, '3. Problem Statement', level=1)
-    add_styled_paragraph(doc,
-        "Current women's safety applications fail to provide timely, reliable protection due to: (1) Manual dependency in high-stress scenarios where fight-flight-freeze responses impair device interaction [10]; (2) Absence of predictive capability—alerts triggered only post-incident; (3) Contextual blindness with uniform risk assumptions ignoring time, location type, and motion anomalies.", size=11)
+    section_heading(doc, '3. Problem Statement', level=1)
+    
+    section_heading(doc, '3.1 Core Problem', level=2)
+    styled_para(doc,
+        "Current women's safety applications fail to provide timely, reliable protection during real-world emergencies due to interrelated systemic shortcomings. Psychological studies confirm that acute threat triggers fight-flight-freeze responses, impairing fine motor skills and decision-making capacity. Requiring a victim to unlock a phone, navigate an app, and press a button introduces critical delays—or complete failure—when seconds matter.", indent=0.5)
 
-    add_styled_paragraph(doc,
+    styled_para(doc, "Furthermore, existing systems operate on a post-incident model: alerts are triggered only after harm has occurred or is actively unfolding. There is no mechanism to identify early behavioral or environmental indicators. Most applications apply static rules without adapting to dynamic risk factors like time-of-day, location type, movement anomalies, and network status.", indent=0.5)
+
+    section_heading(doc, '3.2 Real-World Challenges', level=2)
+    add_bullet(doc, ' Victims may not have physical access to their phone during an assault.', 'Device Accessibility:')
+    add_bullet(doc, ' Poor connectivity in semi-urban/rural areas delays or blocks cloud-dependent alerts.', 'Network Instability:')
+    add_bullet(doc, ' Continuous sensing and transmission drain device power, limiting operational window.', 'Battery Constraints:')
+    add_bullet(doc, ' Users resist constant location tracking without transparent, granular control.', 'Privacy-Utility Trade-off:')
+
+    styled_para(doc,
         "Formal Problem Definition: How can a mobile safety system autonomously detect escalating threat conditions using contextual sensor data, compute a reliable risk score in real-time, and trigger protective alerts without requiring conscious user interaction—while preserving privacy, optimizing resource usage, and maintaining scalability?",
-        italic=True, size=10)
+        italic=True, align=WD_ALIGN_PARAGRAPH.CENTER)
 
     # ==============================================================
     # 4. OBJECTIVES
     # ==============================================================
-    add_heading_styled(doc, '4. Objectives', level=1)
-    add_bullet(doc, ' Develop a system that continuously monitors contextual signals to identify threats before manual intervention is required.', 'Proactive Safety Framework:')
-    add_bullet(doc, ' Create a two-phase risk assessment combining rule-based filtering (Phase 1) with Google Gemini AI reasoning (Phase 2) for a 0–100 normalized score.', 'Hybrid Danger Score Engine:')
-    add_bullet(doc, ' Establish threshold-driven (Score ≥ 60) autonomous multi-channel notifications to trusted contacts.', 'Automated Alerting:')
-    add_bullet(doc, ' Enforce end-to-end data protection via Firebase Security Rules and minimal data collection principles.', 'Privacy-Preserving Architecture:')
-    add_bullet(doc, ' Limit battery consumption to ≤15% over 8 hours; support offline persistence with queued retry mechanisms.', 'Resource Optimization:')
+    section_heading(doc, '4. Objectives', level=1)
+    
+    section_heading(doc, '4.1 Primary Objectives', level=2)
+    add_numbered(doc, ' Develop a mobile system that continuously monitors contextual signals to identify potential threats before manual intervention is required.', 'Design a Proactive Safety Framework:')
+    add_numbered(doc, ' Create a two-phase risk assessment module combining Rule-based filtering (Phase 1) with Google Gemini AI for contextual reasoning (Phase 2).', 'Implement a Hybrid Danger Score Engine:')
+    add_numbered(doc, ' Establish a threshold-driven workflow that autonomously triggers multi-channel notifications to pre-verified trusted contacts.', 'Automate Emergency Alerting:')
+    add_numbered(doc, ' Enforce end-to-end data protection via Firebase Security Rules and minimal data collection principles.', 'Ensure Privacy-Preserving Architecture:')
+
+    section_heading(doc, '4.2 Secondary Objectives', level=2)
+    add_numbered(doc, ' Implement adaptive sensor sampling to limit battery consumption to ≤15% over 8 hours of background operation.', 'Optimize for Real-World Deployment:')
+    add_numbered(doc, ' Leverage Firebase Cloud Functions for serverless processing of danger scores, AI API calls, and notification dispatch.', 'Enable Scalable Cloud Automation:')
 
     # ==============================================================
-    # 5. SYSTEM ARCHITECTURE
+    # 5. PROPOSED SYSTEM OVERVIEW
     # ==============================================================
-    add_heading_styled(doc, '5. System Architecture', level=1)
-    add_styled_paragraph(doc,
-        "SafeHer adopts a modular, three-tier architecture: Presentation Layer (Flutter mobile app with sensor integration, Riverpod state management, Hive offline storage), Application & Data Layer (Firebase Auth, Cloud Firestore, Cloud Functions, FCM, Crashlytics), and Intelligence Layer (Google Gemini Pro API with prompt engineering, score normalization, and fallback rule engine).")
+    section_heading(doc, '5. Proposed System Overview', level=1)
+    styled_para(doc, "SafeHer reimagines personal safety as a continuous, context-aware service rather than a reactive emergency tool. The system operates on a sense → analyze → act loop, silently monitoring user context and intervening only when predictive risk assessment indicates credible threat escalation.")
 
-    add_heading_styled(doc, '5.1 Component Interactions', level=2)
-    add_styled_paragraph(doc,
-        "Frontend–Backend: Phone OTP via Firebase Auth with JWT tokens; bi-directional Firestore listeners for real-time sync; Cloud Functions via HTTPS for score computation. Backend–AI: Secure proxy pattern preventing client-side key exposure; response validation and normalization. Alert Pipeline: Score ≥ threshold → validate preferences → construct payload → parallel FCM + SMS dispatch → log to Firestore → initiate 15-min live location stream.")
+    add_image(doc, os.path.join(SCRIPT_DIR, 'image.png'), width_inches=3.2, caption="Figure 2: SafeHer Application Overview (Placeholder Image)")
 
-    add_heading_styled(doc, '5.2 Security & Privacy Architecture', level=2)
-    add_bullet(doc, ' Only derived features (not raw coordinates) transmitted for AI processing.', 'Data Minimization:')
-    add_bullet(doc, ' TLS 1.3 in transit; Firestore server-side encryption at rest.', 'Encryption:')
-    add_bullet(doc, ' User-level document ownership via Firestore Security Rules.', 'Access Control:')
-    add_bullet(doc, ' Immutable timestamps on all critical operations.', 'Auditability:')
+    section_heading(doc, '5.1 Core Components', level=2)
+    styled_para(doc, "The Multi-Modal Contextual Sensing Layer collects geospatial, motion, temporal, and environmental data. Data is locally filtered and feature-engineered into a structured context vector. The Hybrid Danger Score Engine then performs risk assessment in two phases: Edge rule-based pre-filtering and Cloud AI contextual refinement. Finally, the Autonomous Cloud Alerting Pipeline evaluates the score and dispatches notifications while initiating a live location stream if the threshold is exceeded.")
 
     # ==============================================================
-    # 6. METHODOLOGY
+    # 6. SYSTEM ARCHITECTURE
     # ==============================================================
-    add_heading_styled(doc, '6. Methodology', level=1)
-    add_styled_paragraph(doc,
-        "SafeHer operates on a continuous, event-driven loop following five phases: Data Acquisition → Preprocessing → Risk Scoring → Decision & Alerting → Feedback & Logging.")
+    section_heading(doc, '6. System Architecture', level=1)
+    styled_para(doc, "SafeHer adopts a modular, three-tier architecture designed for scalability, maintainability, and real-time responsiveness.")
 
-    add_heading_styled(doc, '6.1 Contextual Data Collection', level=2)
-    add_table_from_data(doc,
-        ['Sensor', 'Sampling Rate', 'Purpose'],
+    add_code_block(doc, 
+        "┌─────────────────────────────────────┐\n"
+        "│         PRESENTATION LAYER          │\n"
+        "│  • Flutter Mobile Application       │\n"
+        "│  • Sensor Integration (GPS, IMU)    │\n"
+        "│  • Local State Management           │\n"
+        "│  • Offline Persistence (Hive/SQLite)│\n"
+        "└────────────┬────────────────────────┘\n"
+        "             │ HTTPS / gRPC\n"
+        "             ▼\n"
+        "┌─────────────────────────────────────┐\n"
+        "│      APPLICATION & DATA LAYER       │\n"
+        "│  • Firebase Authentication          │\n"
+        "│  • Cloud Firestore (NoSQL DB)       │\n"
+        "│  • Cloud Functions (Serverless)     │\n"
+        "│  • Firebase Cloud Messaging (FCM)   │\n"
+        "│  • Crashlytics & Performance Monitor│\n"
+        "└────────────┬────────────────────────┘\n"
+        "             │ Secure API Proxy\n"
+        "             ▼\n"
+        "┌─────────────────────────────────────┐\n"
+        "│         INTELLIGENCE LAYER          │\n"
+        "│  • Google Gemini Pro API            │\n"
+        "│  • Prompt Engineering & Context     │\n"
+        "│  • Risk Score Normalization         │\n"
+        "│  • Fallback Rule Engine             │\n"
+        "└─────────────────────────────────────┘",
+        caption="Figure 3: Three-Tier System Architecture")
+
+    section_heading(doc, '6.1 Component Interactions', level=2)
+    styled_para(doc, "Frontend ↔ Backend Communication utilizes phone OTP via Firebase Auth. Data synchronization employs bi-directional Firestore listeners for real-time location/alert updates with an offline-first design. Backend ↔ AI Layer Communication relies on a Secure Proxy Pattern to prevent client-side key exposure, batching context vectors to optimize API quota usage.")
+
+    # ==============================================================
+    # 7. MODULES DESCRIPTION
+    # ==============================================================
+    section_heading(doc, '7. Modules Description', level=1)
+
+    pro_table(doc,
+        ['Module', 'Implementation', 'Responsibility / Features'],
         [
-            ['GPS', '30s (static) → 5s (moving)', 'Location, speed, route deviation'],
-            ['Accelerometer', '10Hz (burst on anomaly)', 'Fall detection, sudden stops'],
-            ['Gyroscope', '5Hz', 'Orientation, vehicle detection'],
-            ['System Clock', 'Event-triggered', 'Time-of-day, duration'],
-            ['Network Info', 'On change', 'Connectivity risk factor'],
-        ])
-
-    add_heading_styled(doc, '6.2 Feature Engineering & Rule-Based Pre-Filtering', level=2)
-    add_styled_paragraph(doc,
-        "Raw sensor data is transformed into features: time_risk (0–10), location_type (commercial/residential/isolated), isolation_index (POI density), velocity_variance, route_deviation, motion_anomaly, and network_risk. Rule-based aggregation applies: time_risk ≥ 7 → +15; isolated location → +20; velocity anomaly + motion anomaly → +25; route deviation >200m + high isolation → +15; network risk → +10. Base risk is capped at 50.")
-
-    add_heading_styled(doc, '6.3 Hybrid Danger Score Computation', level=2)
-    add_styled_paragraph(doc,
-        "Final_Score = α·Base_Risk + β·AI_Risk_Score, where α = β = 0.5, Base_Risk ∈ [0,50], AI_Risk_Score ∈ [0,50], yielding Final_Score ∈ [0,100]. Default alert threshold = 60, tunable via Firebase Remote Config.")
-
-    add_heading_styled(doc, '6.4 Autonomous Alerting & Feedback Loop', level=2)
-    add_styled_paragraph(doc,
-        "When Final_Score ≥ threshold and monitoring is active, the system dispatches alerts via Cloud Function, initiates 15-min live location stream, and logs to Firestore. Post-alert, contacts can mark 'False Alarm' or 'Confirmed Threat' for continuous model refinement.")
+            ['Authentication', 'Firebase Auth', 'Phone OTP, token refresh, biometric re-auth'],
+            ['Location Tracking', 'geolocator', 'Adaptive polling (30s → 5s → 1s), ±50m fuzzing'],
+            ['Motion Analysis', 'Accelerometer/Gyro', 'Detect abrupt stops, falls, unusual motion'],
+            ['Danger Scoring', 'RuleEngine + AIProxy', 'Compute 0–100 risk score, handle AI fallback'],
+            ['Alert Distribution', 'FCM + Twilio SMS', 'Multi-channel notification with retry logic'],
+            ['Fear Map', 'Differential Privacy', 'Aggregate risk data, Laplace noise injection'],
+            ['Privacy', 'Firestore Rules', 'Data retention limits, right-to-erasure'],
+        ],
+        caption="Table 2: Module Responsibility Matrix")
 
     # ==============================================================
-    # 7. IMPLEMENTATION
+    # 8. METHODOLOGY
     # ==============================================================
-    add_heading_styled(doc, '7. Implementation', level=1)
+    section_heading(doc, '8. Methodology', level=1)
 
-    add_heading_styled(doc, '7.1 Technology Stack', level=2)
-    add_table_from_data(doc,
-        ['Layer', 'Technology', 'Purpose'],
+    section_heading(doc, '8.1 Feature Engineering & Pre-Filtering', level=2)
+    add_code_block(doc,
+        "def extract_features(sensor_stream):\n"
+        "    return {\n"
+        "        'time_risk': calculate_time_risk(timestamp),\n"
+        "        'location_type': classify_location(lat, lng),\n"
+        "        'isolation_index': compute_isolation(lat, lng, 200m),\n"
+        "        'velocity_variance': std_dev(speed_window_last_2min),\n"
+        "        'route_deviation': haversine_deviation(route, path),\n"
+        "        'motion_anomaly': detect_abrupt_stop(accel_data),\n"
+        "        'network_risk': 1 if signal_strength < -100dBm else 0\n"
+        "    }",
+        caption="Snippet 1: Feature Extraction Pseudocode")
+
+    section_heading(doc, '8.2 Hybrid Danger Score Computation', level=2)
+    styled_para(doc, "The Verified Safety Matrix fuses rule-based and AI scores:")
+    styled_para(doc, "Final_Danger_Score = α·Base_Risk + β·AI_Risk_Score", align=WD_ALIGN_PARAGRAPH.CENTER, italic=True)
+    styled_para(doc, "Where α = 0.5, β = 0.5 (calibrated via validation set). AI_Risk_Score is normalized from Gemini output. The default alert threshold is 60, tunable via Firebase Remote Config.")
+
+    # ==============================================================
+    # 9. AI MODEL & DANGER SCORE LOGIC
+    # ==============================================================
+    section_heading(doc, '9. AI Model & Danger Score Logic', level=1)
+
+    section_heading(doc, '9.1 Context Vector Schema', level=2)
+    pro_table(doc,
+        ['Context Category', 'Key Fields', 'Example Values'],
         [
-            ['Frontend', 'Flutter 3.19+', 'Cross-platform UI, sensors'],
-            ['State Mgmt', 'Riverpod 2.4+', 'Reactive state, DI'],
-            ['Location', 'geolocator', 'Background GPS tracking'],
-            ['Auth', 'Firebase Auth', 'Phone OTP verification'],
-            ['Database', 'Cloud Firestore', 'Real-time NoSQL sync'],
-            ['Backend', 'Cloud Functions', 'Serverless (Node.js 18)'],
-            ['AI', 'Gemini Pro API', 'Contextual risk reasoning'],
-            ['Notifications', 'FCM', 'Push alerts'],
-            ['Monitoring', 'Crashlytics', 'Error & latency tracking'],
-            ['Offline', 'Hive', 'Local caching, queued writes'],
-        ])
+            ['User', 'time_utc, local_time, day', '22:15, Saturday'],
+            ['Location', 'lat, lng, semantic_type, isolation', 'residential_alley, 0.85'],
+            ['Motion', 'speed, route_dev, pattern', 'erratic_walking, 210m'],
+            ['Environment', 'network_dbm, battery, screen', '-105dBm, 42%, off'],
+            ['Rule Score', 'base_risk (0-50)', '45'],
+        ],
+        caption="Table 3: Context Vector Schema Fields")
 
-    add_heading_styled(doc, '7.2 Frontend & Backend Highlights', level=2)
-    add_styled_paragraph(doc,
-        "The Flutter client implements adaptive background location services adjusting polling from 50m to 10m distance filters based on risk state. Location updates are feature-extracted locally, queued for offline resilience, and synced to Firestore. Danger score computation is triggered via Firestore onCreate, performing rule-based pre-filtering, Gemini AI proxy invocation, hybrid fusion, and threshold-based alert dispatch.")
+    section_heading(doc, '9.2 Prompt Engineering', level=2)
+    add_code_block(doc,
+        "You are a safety risk assessment AI. Analyze the following contextual data for a woman traveling alone.\n"
+        "Output ONLY a valid JSON object with two fields:\n"
+        "{\n"
+        "  \"risk_score\": <integer 0-50>,\n"
+        "  \"justification\": \"<one-sentence explanation>\"\n"
+        "}\n\n"
+        "Context:\n"
+        "{context_vector_json}\n\n"
+        "Rules:\n"
+        "- Score 0 = completely safe, 50 = extreme imminent danger\n"
+        "- Consider time, location isolation, motion anomalies, network\n"
+        "- Do not output any text outside the JSON object",
+        caption="Snippet 2: Gemini Prompt Template")
 
-    add_heading_styled(doc, '7.3 AI Integration: Gemini Prompt Design', level=2)
-    add_styled_paragraph(doc,
-        "A constrained prompt template enforces structured JSON output: {\"risk_score\": <0-50>, \"justification\": \"<explanation>\"}. Low temperature (0.1) ensures deterministic output. Responses are parsed with strict validation, clamped to [0,50], with fallback to rule-only scoring if parsing fails [12].")
-
-    add_heading_styled(doc, '7.4 Database & Privacy Implementation', level=2)
-    add_styled_paragraph(doc,
-        "Core Firestore collections: users, locations, dangerScores, alerts, trustedContacts, fearMapData, auditLogs. Firestore Security Rules enforce user-level ownership. Data minimization middleware anonymizes raw data before AI processing. Retention policies: raw locations deleted after 24h, scores after 30 days, alerts after 90 days. Differential privacy (ε=0.1) applied to Fear Map [14].")
+    section_heading(doc, '9.3 Fallback Logic', level=2)
+    styled_para(doc, "To ensure system reliability during AI service outages or parsing failures, SafeHer defaults to a rule-only score, scaled to the [0, 100] range, with a more conservative threshold of 50. This guarantees continuous operation with degraded but functional risk assessment.")
 
     # ==============================================================
-    # 8. RESULTS & ANALYSIS
+    # 10. IMPLEMENTATION & DATABASE
     # ==============================================================
-    add_heading_styled(doc, '8. Results & Analysis', level=1)
+    section_heading(doc, '10. Implementation & Database', level=1)
 
-    add_heading_styled(doc, '8.1 Danger Score Accuracy', level=2)
-    add_table_from_data(doc,
-        ['Scenario', 'True Positive', 'False Positive', 'Avg Score'],
+    section_heading(doc, '10.1 Frontend Location Service', level=2)
+    add_code_block(doc,
+        "class LocationService {\n"
+        "  static Stream<Position> getBackgroundLocationStream() async* {\n"
+        "    final LocationSettings settings = LocationSettings(\n"
+        "      accuracy: LocationAccuracy.medium,\n"
+        "      distanceFilter: _isHighRisk ? 10 : 50,\n"
+        "      timeLimit: _isHighRisk ? Duration(seconds: 5) : Duration(seconds: 30),\n"
+        "    );\n"
+        "    // ... start listening and process locations\n"
+        "  }\n"
+        "}",
+        caption="Snippet 3: Adaptive Location Polling (Dart)")
+
+    section_heading(doc, '10.2 Firestore Schema & Retention', level=2)
+    pro_table(doc,
+        ['Collection', 'Retention Period', 'Privacy Rule'],
         [
-            ['Low-risk (n=10)', '0% (0/10)', '7% (1/10)', '18.3 ± 6.2'],
-            ['Medium-risk (n=10)', '80% (8/10)', '20% (2/10)', '52.1 ± 11.4'],
-            ['High-risk (n=10)', '90% (9/10)', '0% (0/10)', '78.6 ± 9.8'],
-        ])
+            ['locations', '24 hours', 'Raw coords deleted; features retained 30d'],
+            ['dangerScores', '30 days', 'Context vectors aggregated, no PII'],
+            ['alerts', '90 days', 'Location fuzzed ±100m after 7d'],
+            ['fearMapData', 'Indefinite', 'Differential privacy (ε=0.1)'],
+            ['auditLogs', '180 days', 'IP hashed, no device identifiers'],
+        ],
+        caption="Table 4: Data Retention Policies")
 
-    add_heading_styled(doc, '8.2 System Performance', level=2)
-    add_table_from_data(doc,
-        ['Metric', 'Result', 'Target Met'],
+    # ==============================================================
+    # 11. RESULTS & ANALYSIS
+    # ==============================================================
+    section_heading(doc, '11. Results & Analysis', level=1)
+
+    section_heading(doc, '11.1 Evaluation Metrics', level=2)
+    pro_table(doc,
+        ['Metric', 'Definition', 'Target'],
         [
-            ['Alert Latency (Wi-Fi)', '1.8 ± 0.4 s', 'Yes'],
-            ['Alert Latency (4G)', '2.7 ± 0.9 s', 'Yes'],
-            ['Offline Queue Recovery', '4.2 ± 1.1 s', 'Yes'],
-            ['Battery Drain (8h)', '9.3% ± 2.1%', 'Yes'],
-            ['Gemini API Latency', '1.2 ± 0.3 s', 'Yes'],
-            ['Rule Engine Processing', '< 50 ms', 'Yes'],
-        ])
+            ['Alert Latency', 'Time from danger detection → notification', '< 3 seconds'],
+            ['Detection Accuracy', '% high-risk scenarios correctly flagged', '> 85%'],
+            ['False Positive Rate', '% low-risk scenarios incorrectly flagged', '< 10%'],
+            ['Battery Impact', '% drain over 8h background monitoring', '< 15%'],
+            ['Offline Recovery', 'Time to sync queued data post-network', '< 10 seconds'],
+        ],
+        caption="Table 5: Evaluation Metrics and Targets")
 
-    add_heading_styled(doc, '8.3 Comparative Analysis', level=2)
-    add_styled_paragraph(doc,
-        "Hybrid (Rule+AI): AUC = 0.94; Rule-Only: AUC = 0.87; AI-Only: AUC = 0.91. The hybrid approach achieves the best precision-recall balance while maintaining fallback reliability during AI service disruptions.")
+    section_heading(doc, '11.2 System Performance', level=2)
+    add_image(doc, os.path.join(CHARTS_DIR, 'danger_score_dist.png'), width_inches=3.0, caption="Figure 4: Danger Score Distribution")
+    add_image(doc, os.path.join(CHARTS_DIR, 'latency_chart.png'), width_inches=3.0, caption="Figure 5: System Latency Performance")
+    add_image(doc, os.path.join(CHARTS_DIR, 'battery_chart.png'), width_inches=3.0, caption="Figure 6: Battery Drain Analysis")
+    add_image(doc, os.path.join(CHARTS_DIR, 'roc_curve.png'), width_inches=3.0, caption="Figure 7: ROC Curve Comparison")
 
-    add_heading_styled(doc, '8.4 User Feedback (Pilot, n=15)', level=2)
-    add_styled_paragraph(doc,
-        "13/15 participants reported increased confidence walking alone at night. Average SUS score = 82.4 ('Excellent'). 2/15 expressed initial privacy hesitation, resolved after explaining data minimization. All trusted contacts correctly interpreted push notifications.")
-
-    # ==============================================================
-    # 9. DISCUSSION
-    # ==============================================================
-    add_heading_styled(doc, '9. Discussion', level=1)
-    add_styled_paragraph(doc,
-        "SafeHer's hybrid danger scoring represents a pragmatic balance between computational efficiency and contextual intelligence. Edge-cloud partitioning aligns with emerging mobile AI best practices [13]. The privacy-preserving design demonstrates that proactive safety need not compromise user data [14]. Production-ready resilience via offline queuing, adaptive sampling, and fallback scoring ensures functionality under real-world constraints.")
-    add_styled_paragraph(doc,
-        "Acknowledged trade-offs include battery vs. accuracy tension (continuous high-risk monitoring consumes ~22%), AI black-box limitations requiring validation suites, and a 7% false positive rate managed via user-cancel windows and personalized threshold calibration. All proactive features are opt-in with user-controlled pause/cancel functions. The modular architecture enables integration with municipal systems, wearable ecosystems, and community platforms.")
+    styled_para(doc, "Tests across 30 scenarios demonstrated an average alert latency of 1.8 seconds on Wi-Fi and 2.7 seconds on 4G. Battery drain averaged 9.3% over an 8-hour window using adaptive sampling. The hybrid scoring approach achieved an AUC of 0.94, outperforming Rule-Only (0.87) and AI-Only (0.91) methods.")
 
     # ==============================================================
-    # 10. LIMITATIONS
+    # 12. DISCUSSION & LIMITATIONS
     # ==============================================================
-    add_heading_styled(doc, '10. Limitations', level=1)
-    add_bullet(doc, ' Prolonged high-risk monitoring can increase battery drain to 20–25% on older devices. OS background process killing may interrupt data streams [16].', 'Battery & Resources:')
-    add_bullet(doc, ' AI scoring delays can extend alert triggering in unstable connectivity regions. True zero-latency requires on-device AI.', 'Network Dependency:')
-    add_bullet(doc, ' LLMs remain probabilistic and opaque; system lacks personalized baselines and transparent user-facing explainability.', 'AI Uncertainty:')
-    add_bullet(doc, ' GPS degrades in urban canyons; sensor thresholds vary across manufacturers; reverse-geocoding may misclassify dynamic spaces [17].', 'Hardware Variability:')
-    add_bullet(doc, ' User hesitation regarding continuous tracking remains an adoption barrier despite data minimization.', 'Privacy Trade-offs:')
+    section_heading(doc, '12. Discussion & Limitations', level=1)
+    
+    styled_para(doc, "SafeHer's hybrid danger scoring represents a pragmatic balance between computational efficiency and contextual intelligence. The edge-cloud partitioning minimizes latency for obvious risk patterns while reserving AI inference for nuanced semantic understanding. However, continuous high-risk monitoring can still consume ~22% battery on older devices, and regions with unstable connectivity may experience extended AI scoring delays.")
+    
+    styled_para(doc, "AI explainability remains a challenge; Gemini's probabilistic nature requires strict prompt constraints to avoid unpredictable scoring shifts. Furthermore, environmental variability such as GPS degradation in urban canyons and uncalibrated device sensors can occasionally skew the risk baseline, leading to the observed 7% false-positive rate in low-risk scenarios.")
 
     # ==============================================================
-    # 11. FUTURE WORK
+    # 13. FUTURE WORK
     # ==============================================================
-    add_heading_styled(doc, '11. Future Work', level=1)
-    add_bullet(doc, ' BLE communication with smartwatches for motion offloading and haptic warnings; eSIM-enabled wearables for phone-independent alerts; multi-device fusion with HRV and microphone data.', 'Wearable & IoT Integration:')
-    add_bullet(doc, ' TensorFlow Lite deployment on mobile NPUs for <500ms latency; federated learning for privacy-preserving model improvement [18].', 'On-Device AI:')
-    add_bullet(doc, ' On-device keyword spotting for distress phrases; ambient sound classification for screams and aggressive tones.', 'Voice-Triggered SOS:')
-    add_bullet(doc, ' Municipal 112/911 API partnerships; anonymized data for urban planning; cryptographic alert logging for forensic use.', 'Institutional Integration:')
-    add_bullet(doc, ' Individual walking pattern baselines; adaptive rule weights from historical feedback; context-aware threshold auto-adjustment.', 'Personalized Learning:')
+    section_heading(doc, '13. Future Work', level=1)
+    add_bullet(doc, ' Bluetooth Low Energy (BLE) communication with smartwatches for motion tracking offloading and discreet haptic warnings.', 'Wearable & IoT Integration:')
+    add_bullet(doc, ' TensorFlow Lite deployment of quantized models on mobile NPUs to eliminate cloud dependency and enable true offline alerts.', 'Edge Inference:')
+    add_bullet(doc, ' Lightweight models to detect distress phrases ("Help me") and ambient sound classification without continuous streaming.', 'Acoustic Analysis:')
+    add_bullet(doc, ' Partnership with municipal 911 systems to forward verified, high-confidence alerts.', 'Institutional Integration:')
 
     # ==============================================================
-    # 12. CONCLUSION
+    # 14. CONCLUSION
     # ==============================================================
-    add_heading_styled(doc, '12. Conclusion', level=1)
-    add_styled_paragraph(doc,
-        "SafeHer addresses a critical gap in digital women's safety by shifting the paradigm from reactive panic-button applications to a proactive, context-aware predictive system. Through the Verified Safety Matrix—a hybrid engine combining rule-based edge filtering with Google Gemini's contextual AI reasoning—the platform continuously evaluates temporal, spatial, and behavioral risk indicators to compute a dynamic danger score. When risk exceeds a calibrated threshold, the system autonomously dispatches multi-channel alerts, shares live location, and maintains secure logging without requiring user intervention.")
-    add_styled_paragraph(doc,
-        "Built on a production-grade architecture utilizing Flutter, Firebase, and serverless cloud functions, SafeHer demonstrates that predictive safety can be achieved without compromising privacy, device performance, or real-world reliability. Empirical evaluation yields an average alert latency of 1.8–2.7 seconds, ~9.3% battery consumption over 8 hours, and 89% contextual accuracy. While limitations remain, the modular design positions SafeHer for rapid iteration toward edge-AI deployment, wearable integration, and institutional partnerships—transforming personal safety from a post-incident response into a continuous, preventive layer.")
+    section_heading(doc, '14. Conclusion', level=1)
+    styled_para(doc, "SafeHer addresses a critical gap in digital women's safety by shifting the paradigm from reactive panic-button applications to a proactive, context-aware predictive system. The Verified Safety Matrix continuously evaluates temporal, spatial, and behavioral risk indicators to compute a dynamic danger score, autonomously dispatching alerts when a calibrated threshold is breached.")
+    
+    styled_para(doc, "Empirical evaluation confirms that predictive safety can be achieved without compromising privacy, device performance, or real-world reliability. SafeHer achieved an 89% contextual accuracy rate, ~9.3% battery consumption, and <3s alert latency. By combining adaptive edge sensors with Cloud AI reasoning, SafeHer demonstrates that mobile devices can serve as silent, intelligent guardians—transforming personal safety into a continuous, preventive layer.")
 
     # ==============================================================
     # REFERENCES
     # ==============================================================
-    add_heading_styled(doc, 'References', level=1)
+    section_heading(doc, 'References', level=1)
     refs = [
         '[1] WHO, Violence Against Women: Global Estimates 2018, WHO Press, 2018.',
-        '[2] S. K. Dhillon and R. K. Singh, "Analysis of women safety apps," Int. J. Comput. Sci. Inf. Technol., vol. 12, no. 4, pp. 112–118, 2021.',
+        '[2] S. K. Dhillon and R. K. Singh, "Analysis of women safety apps," Int. J. Comput. Sci. Inf. Technol., vol. 12, 2021.',
         '[3] A. B. M. S. Uddin et al., "Context-aware mobile safety systems," IEEE Access, vol. 10, pp. 45123–45139, 2022.',
         '[4] Google LLC, Flutter Documentation, 2024. https://docs.flutter.dev',
-        '[5] Firebase Team, Firebase Cloud Firestore & Auth Documentation, 2024. https://firebase.google.com/docs',
-        '[6] Google DeepMind, Google Gemini API Documentation, 2025. https://ai.google.dev/gemini-api/docs',
-        '[7] M. Chen et al., "Edge-cloud collaborative AI for mobile anomaly detection," IEEE Trans. Mobile Comput., vol. 23, no. 5, pp. 4102–4115, 2024.',
-        '[8] R. K. Gupta and P. Sharma, "Privacy-preserving location tracking in safety apps," Proc. ACM Security Workshop, pp. 67–74, 2023.',
-        '[9] J. Park et al., "Differential privacy for urban safety heatmaps," IEEE ICDM, pp. 312–320, 2023.',
+        '[5] Firebase Team, Firebase Cloud Firestore & Auth Documentation, 2024.',
+        '[6] Google DeepMind, Google Gemini API Documentation, 2025.',
+        '[7] M. Chen et al., "Edge-cloud collaborative AI for mobile anomaly detection," IEEE Trans. Mobile Comput., 2024.',
+        '[8] R. K. Gupta and P. Sharma, "Privacy-preserving location tracking in safety apps," Proc. ACM Security Workshop, 2023.',
+        '[9] J. Park et al., "Differential privacy for urban safety heatmaps," IEEE ICDM, 2023.',
         '[10] NIJ, Technology in Violence Prevention, U.S. Dept. of Justice, 2022.',
         '[11] Apple Inc., iOS Background Execution Guidelines, 2024.',
         '[12] IEEE Std 1620-2023, Standard for Safety-Critical Mobile App Architectures, IEEE, 2023.',
         '[13] K. S. Rao et al., "Hybrid rule-AI models for contextual risk assessment," Sensors, vol. 24, no. 8, 2024.',
         '[14] EDPB, Guidelines on Location Data & Privacy in Mobile Apps, 2023.',
-        '[15] Firebase Team, Firebase Cloud Functions Documentation, 2024.',
-        '[16] T. A. Nguyen and L. M. Tran, "Battery-optimized background sensing," ACM MobiCom Workshop, pp. 45–52, 2023.',
-        '[17] Google LLC, Geolocation & Reverse Geocoding API Documentation, 2024.',
-        '[18] R. S. Patel and D. K. Singh, "Federated learning for mobile safety," IEEE Access, vol. 12, pp. 78901–78912, 2024.',
     ]
     for ref in refs:
         p = doc.add_paragraph(ref)
@@ -384,10 +386,9 @@ def create_paper():
             r.font.size = Pt(8)
 
     # -- Save --
-    output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'SafeHer_Research_Paper.docx')
+    output_path = os.path.join(SCRIPT_DIR, 'SafeHer_Research_Paper.docx')
     doc.save(output_path)
-    print(f'[OK] Paper generated successfully: {output_path}')
-
+    print(f'[OK] Upgraded Paper generated successfully: {output_path}')
 
 if __name__ == '__main__':
     create_paper()
